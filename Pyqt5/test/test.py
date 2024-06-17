@@ -1,47 +1,66 @@
-# 本模块的功能:<QColorDialog提供颜色的选择>
-# TODO 这个厉害,直接调用系统的颜色选择框
-# TODO 强,实在是强
-from PyQt5.QtWidgets import (QWidget, QPushButton, QFrame,
-    QColorDialog, QApplication)
-from PyQt5.QtGui import QColor
 import sys
+import time
+from datetime import datetime
+from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QLabel, QWidget
+from PyQt5.QtCore import QTimer
+import psutil
 
-class Example(QWidget):
 
+class BatteryMonitor(QWidget):
     def __init__(self):
         super().__init__()
-
         self.initUI()
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_battery_info)
+        self.timer.start(1000)  # 更新频率为1秒
+
 
 
     def initUI(self):
-
-        col = QColor(0, 0, 0)
-
-        self.btn = QPushButton('Dialog', self)
-        self.btn.move(20, 20)
-
-        self.btn.clicked.connect(self.showDialog)
-
-        self.frm = QFrame(self)
-        self.frm.setStyleSheet("QWidget { background-color: %s }"
-            % col.name())
-        self.frm.setGeometry(130, 22, 100, 100)
-
-        self.setGeometry(300, 300, 250, 180)
-        self.setWindowTitle('Color dialog')
-        self.show()
+        self.setWindowTitle('Battery Monitor')
+        self.layout = QVBoxLayout()
+        self.percentage_label = QLabel('')
+        self.status_label = QLabel('')
+        self.open_label = QLabel('')
+        self.already_open_label = QLabel('')
+        self.layout.addWidget(self.percentage_label)
+        self.layout.addWidget(self.status_label)
+        self.layout.addWidget(self.open_label)
+        self.layout.addWidget(self.already_open_label)
+        self.setLayout(self.layout)
 
 
-    def showDialog(self):
 
-        col = QColorDialog.getColor()
+    def update_battery_info(self):
+        battery = psutil.sensors_battery()
 
-        if col.isValid():
-            self.frm.setStyleSheet("QWidget { background-color: %s }"
-                % col.name())
+        now_time = datetime.now()
+        now_time = now_time.strftime("%Y-%m-%d %H:%M:%S")  # 字符串类型
+        now_time = datetime.strptime(now_time, r"%Y-%m-%d %H:%M:%S")  # 将字符串类型转为datetime.datetime类型
+
+        last_time = psutil.boot_time()
+        last_time = datetime.utcfromtimestamp(last_time)    # 将float类型转为datetime.datetime类型
+
+        end_time = now_time - last_time
+        end_time = str(end_time)
+        self.already_open_label.setText('系统已启动时间: ' + end_time)
 
 
-app = QApplication(sys.argv)
-ex = Example()
-sys.exit(app.exec_())
+        self.open_label.setText(time.strftime('系统启动时间: '+'%Y-%m-%d %H:%M:%S', time.localtime(psutil.boot_time())))
+
+
+
+        if battery:
+            self.percentage_label.setText(f'{battery.percent}%')
+            if battery.power_plugged:
+                self.status_label.setText('Plugged')
+            else:
+                self.status_label.setText('Unplugged')
+
+
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    ex = BatteryMonitor()
+    ex.show()
+    sys.exit(app.exec_())
