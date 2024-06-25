@@ -1,6 +1,6 @@
 import sys
 
-from PyQt5.QtWidgets import QApplication, QStackedLayout, QMainWindow, QMessageBox, QWidget
+from PyQt5.QtWidgets import QApplication, QWidget
 import one
 
 import random
